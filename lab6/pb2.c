@@ -9,7 +9,7 @@ struct _matrix{
 	int n,m;
 	int **holder;
 };
-struct _matrix A,B;
+struct _matrix A,B,C;
 
 void deallocateMatrix(int **x,int n,int m){
 	int i;
@@ -78,28 +78,51 @@ void read_matrix(void* voidSource){
 	
 	
 }
-int sum(int i,int j,int n){
+void* sum(void* arg){
+	int i = ((int*)arg)[0], j = ((int*)arg)[1] , n = ((int*)arg)[2];
 	int k = 0;
 	int suma = 0;
 	for(k=0;k<n;++k)
 		suma += A.holder[i][k] * B.holder[k][j];
-	return suma;
+	
+	//C.holder[i][j] = suma;
+	//return suma;
 }
 
 void* multiplicate_matrix(void *useless){
 	if( A.m != B.n || A.holder == 0 || B.holder == 0 )
 		pthread_exit( (void*)0 );
 	int i,j;
-	struct _matrix C , *res;
+	struct _matrix *res;
 	C.holder = (int**)allocate_matrix(A.n,B.m);
 	C.n = A.n;	
 	C.m = B.m;	
 	printf("Started calculating C = A * B \n");
+
+	pthread_t **thr = (pthread_t**)allocate_matrix(A.n,B.m);
+	
+		
+	
 	for(i=0;i<A.n;++i){
 		for(j=0;j<B.m;++j){
-			C.holder[i][j] = sum(i,j,A.m);	
+			//C.holder[i][j] = sum(i,j,A.m);	
+			int arg[] = {i,j,A.m};
+			if( pthread_create( &thr[i][j], NULL, sum , (void*)arg ) ){
+				perror(NULL);
+				printf("Error: Failed to create a new Thread\n");
+				return errno;
+			}
 		}
 	}
+
+	for(i=0;i<A.n;++i){
+		for(j=0;j<B.m;++j){
+			pthread_join(thr[i][j] , (void*)(&C.holder[i][j]) );
+			
+		}
+	}
+		
+	
 	res = (struct _matrix*)malloc( sizeof(struct _matrix) );
 	*res = C;
 	printf("SUCCES: Finished C = A * B \n");
@@ -131,7 +154,7 @@ int main(int argc , char *argv[])
 		return errno;
 	}
 	
-	if( voidResult == 0 ){
+	if( voidResult == 0 || voidResult == (void*)(-1) ){
 		printf("Error: Null pointer returned from the created Thread");
 		perror(NULL);
 		return errno;
