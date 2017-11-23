@@ -84,9 +84,11 @@ void* sum(void* arg){
 	int suma = 0;
 	for(k=0;k<n;++k)
 		suma += A.holder[i][k] * B.holder[k][j];
-	
+	int *aux = malloc(4);
+	*aux = suma;
+	pthread_exit( aux );
 	//C.holder[i][j] = suma;
-	//return suma;
+	return aux;
 }
 
 void* multiplicate_matrix(void *useless){
@@ -106,7 +108,10 @@ void* multiplicate_matrix(void *useless){
 	for(i=0;i<A.n;++i){
 		for(j=0;j<B.m;++j){
 			//C.holder[i][j] = sum(i,j,A.m);	
-			int arg[] = {i,j,A.m};
+			int *arg = malloc(12);
+			arg[0] = i;
+			arg[1] = j;
+			arg[2] = A.m;
 			if( pthread_create( &thr[i][j], NULL, sum , (void*)arg ) ){
 				perror(NULL);
 				printf("Error: Failed to create a new Thread\n");
@@ -114,10 +119,11 @@ void* multiplicate_matrix(void *useless){
 			}
 		}
 	}
-
+	void *aux;
 	for(i=0;i<A.n;++i){
 		for(j=0;j<B.m;++j){
-			pthread_join(thr[i][j] , (void*)(&C.holder[i][j]) );
+			pthread_join(thr[i][j] , &aux );
+			C.holder[i][j] = (*((int*)aux));
 			
 		}
 	}
