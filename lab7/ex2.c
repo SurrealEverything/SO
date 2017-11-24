@@ -11,12 +11,29 @@
 pthread_mutex_t mtx;
 sem_t sem;
 int reachedBarrierCount;
+int barrier_release()
+{
+    int i;
+    for(i=0; i<THREAD_COUNT-1; ++i)//pornesc semaforul pt threadurile care asteapta
+    {
+        //pthread_mutex_lock(&mtx);
+        //reachedBarrierCount--;
+        //pthread_mutex_unlock(&mtx);
+        if( sem_post (&sem ) ) 
+        {
+            perror (NULL ) ;
+            return errno ;
+        }
+    }
+}
 int barrier_point()
 {
     pthread_mutex_lock(&mtx);
     reachedBarrierCount++;//contorizez firele ajunse la bariera
     pthread_mutex_unlock(&mtx);
-    if( sem_wait (&sem) ) //astept la semafor
+    if(reachedBarrierCount==THREAD_COUNT)//daca toate(in afara de ultimul) threadurile asteapta la bariera
+        barrier_release();//pornesc semaforul pt threadurile care asteapta
+    else if( sem_wait (&sem) ) //astept la semafor
     {
         perror (NULL ) ;
         return errno ;
@@ -61,15 +78,6 @@ int main()
             return errno ;
         }
     }
-
-    while(reachedBarrierCount!=THREAD_COUNT);//astept sa ajunga threadurile la bariera
-
-    for(i=0; i<THREAD_COUNT; ++i)//pornesc semaforul pt threadurile care asteapta
-        if( sem_post (&sem ) ) 
-        {
-            perror (NULL ) ;
-            return errno ;
-        }
 
     for(i=0; i<THREAD_COUNT; ++i)//astept terminarea threadurilor
     {
