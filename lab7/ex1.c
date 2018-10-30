@@ -36,22 +36,24 @@ void* tryToReserve(void *arg){
 			continue;
 		}
 		printf("Got %d resources %d remaining\n",count,resources);
-		fflush(stdout);
+		//fflush(stdout);
+		pthread_mutex_unlock(  &mtx);
 		int i = 0 ;
 		for( i = 0; i <  count;++i)  ;
 		increase_count( count);
 		printf("Released %d resources %d remaining\n",count,resources);
-		fflush(stdout);
+		//fflush(stdout);
 		
 		break;
 		
 	}
 	
-	pthread_mutex_unlock(  &mtx);
+	
 }
 
 int main(int argc, char *argv[]){
 	
+	printf("maxResources = %d\n", maxResources );
 	if( pthread_mutex_init( &mtx, NULL) ){
 		perror(NULL);
 		return errno;
